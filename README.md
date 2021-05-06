@@ -17,6 +17,7 @@
 * [Project dependencies](#project-dependencies)
 * [Additional info](#additional-info)
 * [Feedback](#feedback)
+* [Copyright notice](#copyright-notice)
 
 # The first challenge
 This project is the **fifth** learning project of my collection.
@@ -99,7 +100,7 @@ while redesigning some parts to fit the new workflow model.
 - This project wasn't my first nor my last experience coding in JavaFX, 
 I'll do my best to publish other projects on my GitHub.
 
-- **All** of the projects/repositories (so far) in my profile are produced by an **individual** effort, 
+- **All** of the projects/repositories in my profile are produced by an **individual** effort, 
 that I coded from **scratch**.
 
 # Feedback
@@ -111,3 +112,11 @@ What do you think of this project? leave your thoughts/recommendations !
     alt="Click here to give feedback!">
   </a>
 </p>
+
+# Copyright notice
+This public repository contain purposely **unlicensed** source code (**NOT** open-source), 
+that I only consider as a personal side project and a way to showcase my skills.
+You can surely and gladly download and play my game, or view how it's made.
+
+However, **I DO NOT** grant any kind of usage (Commercial, Patent, Private), Distribution or Modification of the source code contained in this repository.
+For a **private** license agreement please contact me at: bilel.bha.pro@gmail.com
