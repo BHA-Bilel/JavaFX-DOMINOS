@@ -279,6 +279,9 @@ public class MainApp extends Application {
     private MenuBar createTopGUI() {
         MenuBar top = new MenuBar();
 
+        Menu window = new Menu("Window");
+        MenuItem switch_fs = new MenuItem("Switch Full Screen");
+
         Menu about_menu = new Menu("About");
         MenuItem about = new MenuItem("About Me");
         MenuItem help = new MenuItem("Help");
@@ -301,9 +304,12 @@ public class MainApp extends Application {
         download_update.getItems().addAll(du_xo, du_checkers, du_chess,
                 du_connect4, du_dominoes, du_coinche);
 
+        window.getItems().add(switch_fs);
         about_menu.getItems().addAll(about, help, feedback, copyright);
         exit.getItems().addAll(return_room, return_main, return_desktop);
-        top.getMenus().addAll(download_update, exit, about_menu);
+        top.getMenus().addAll(window, download_update, exit, about_menu);
+
+        switch_fs.setOnAction(e -> stage.setFullScreen(!stage.isFullScreen()));
 
         du_xo.setOnAction(e -> {
             Alert alert = new Alert(AlertType.INFORMATION);
@@ -792,7 +798,10 @@ public class MainApp extends Application {
         }
         update_width_height(Assets.gameApp_width, Assets.gameApp_height);
         stage.centerOnScreen();
-        stage.setFullScreen(true);
+        if (was_full_screen)
+            stage.setFullScreen(true);
+        else
+            stage.setMaximized(true);
         allow_user_interactions();
     }
 

@@ -343,8 +343,11 @@ public class RoomApp extends VBox {
         public void run() {
             try {
                 while (true) {
-                    RoomMsg msg = (RoomMsg) objIn.readObject();
-                    handle_message(msg);
+                    try {
+                        RoomMsg msg = (RoomMsg) objIn.readObject();
+                        handle_message(msg);
+                    } catch (NullPointerException | ClassCastException ignore) {
+                    }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 returnHome(true);
@@ -531,7 +534,7 @@ public class RoomApp extends VBox {
 
         alert.getButtonTypes().setAll(yes, no, cancel);
         Optional<ButtonType> res = alert.showAndWait();
-        if (!res.isPresent()) {
+        if (res.isEmpty()) {
             roomClient.deny_team_up(from);
         } else {
             if (res.get() == yes) {
