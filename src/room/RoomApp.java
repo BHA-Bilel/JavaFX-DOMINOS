@@ -92,30 +92,28 @@ public class RoomApp extends VBox {
             }
         });
         topHBox.getChildren().add(change_name);
-        if (MainApp.THIS_GAME.players > 2) {
-            JFXButton team_up = new JFXButton("Team up");
-            team_up.setMinSize(JFXButton.USE_PREF_SIZE, JFXButton.USE_PREF_SIZE);
-            team_up.setOnAction(e -> {
-                HashMap<String, Integer> map = playersGP.getOpponents();
-                if (map.isEmpty()) {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle(MainApp.THIS_GAME.toString());
-                    alert.setHeaderText("You can't team up at the moment");
-                    alert.setContentText("You don't have any opponents !");
-                    alert.show();
-                    return;
-                }
-                Map.Entry<String, Integer> entry = map.entrySet().iterator().next();
-                ChoiceDialog<String> dialog = new ChoiceDialog<>(entry.getKey(), map.keySet());
-                dialog.setTitle("Team up");
-                dialog.setHeaderText("Select the player you want to team up with");
-                dialog.setContentText("A team up request will be sent to :");
+        JFXButton team_up = new JFXButton("Team up");
+        team_up.setMinSize(JFXButton.USE_PREF_SIZE, JFXButton.USE_PREF_SIZE);
+        team_up.setOnAction(e -> {
+            HashMap<String, Integer> map = playersGP.getOpponents();
+            if (map.isEmpty()) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle(MainApp.THIS_GAME.toString());
+                alert.setHeaderText("You can't team up at the moment");
+                alert.setContentText("You don't have any opponents !");
+                alert.show();
+                return;
+            }
+            Map.Entry<String, Integer> entry = map.entrySet().iterator().next();
+            ChoiceDialog<String> dialog = new ChoiceDialog<>(entry.getKey(), map.keySet());
+            dialog.setTitle("Team up");
+            dialog.setHeaderText("Select the player you want to team up with");
+            dialog.setContentText("A team up request will be sent to :");
 
-                Optional<String> result = dialog.showAndWait();
-                result.ifPresent(res -> roomClient.request_team_up(map.get(res)));
-            });
-            topHBox.getChildren().add(team_up);
-        }
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(res -> roomClient.request_team_up(map.get(res)));
+        });
+        topHBox.getChildren().add(team_up);
         JFXButton open_chat = new JFXButton("Open chat");
         open_chat.setMinSize(JFXButton.USE_PREF_SIZE, JFXButton.USE_PREF_SIZE);
         open_chat.setOnAction(e -> chatApp.showChat());
@@ -236,10 +234,22 @@ public class RoomApp extends VBox {
                 Notifications notif = Notifications.create().title("Room").text(text)
                         .hideAfter(Duration.seconds(3)).position(Pos.BOTTOM_RIGHT);
                 switch (notif_type) {
-                    case "info" -> notif.showInformation();
-                    case "warning" -> notif.showWarning();
-                    case "error" -> notif.showError();
-                    case "confirm" -> notif.showConfirm();
+                    case "info": {
+                        notif.showInformation();
+                        break;
+                    }
+                    case "warning": {
+                        notif.showWarning();
+                        break;
+                    }
+                    case "error": {
+                        notif.showError();
+                        break;
+                    }
+                    case "confirm": {
+                        notif.showConfirm();
+                        break;
+                    }
                 }
             }
         });
@@ -356,8 +366,11 @@ public class RoomApp extends VBox {
 
         private void handle_message(RoomMsg msg) throws IOException {
             switch (RoomComm.values()[msg.comm]) {
-                case GAME_STARTING -> MainApp.prevent_user_interactions();
-                case GAME_STARTED -> {
+                case GAME_STARTING: {
+                    MainApp.prevent_user_interactions();
+                    break;
+                }
+                case GAME_STARTED: {
                     Socket playSocket = new Socket();
                     playSocket.connect(new InetSocketAddress(MainApp.SERVER_IP, (int) msg.adt_data[0]), 5000);
                     Socket spreadwinSocket = new Socket();
@@ -366,8 +379,9 @@ public class RoomApp extends VBox {
                     blockSocket.connect(new InetSocketAddress(MainApp.SERVER_IP, (int) msg.adt_data[2]), 5000);
                     gameApp = new GameApp(playSocket, spreadwinSocket, blockSocket, playersGP.getPlayersNames(), playersGP.game_type());
                     Platform.runLater(() -> mainApp.setGameApp(gameApp));
+                    break;
                 }
-                case GAME_ENDED -> {
+                case GAME_ENDED: {
                     if (gameApp != null) {
                         gameApp.closeGameApp();
                         gameApp = null;
@@ -381,21 +395,58 @@ public class RoomApp extends VBox {
                             playersGP.resetReadyStatus();
                         });
                     }
+                    break;
                 }
                 // server sent events
-                case REQUEST_TEAM_UP -> Platform.runLater(() -> handle_team_up_request(msg.from));
-                case TOOK_EMPTY_PLACE -> Platform.runLater(() -> took_empty_place(msg.from, RoomPosition.values()[(int) msg.adt_data[0]]));
-                case TEAMED_UP -> Platform.runLater(() -> teamed_up((int) msg.adt_data[0], (int) msg.adt_data[1]));
-                case DENY_TEAM_UP -> Platform.runLater(() -> denied_team_up(msg.from));
-                case JOINED -> Platform.runLater(() -> addPlayer(false, msg.from, (String) msg.adt_data[0], RoomPosition.values()[(int) msg.adt_data[1]]));
-                case LEFT -> Platform.runLater(() -> removePlayer(msg.from, false));
-                case KICKED -> Platform.runLater(() -> removePlayer(msg.from, true));
-                case NOT_READY -> Platform.runLater(() -> playersGP.setReady(msg.from, false));
-                case READY -> Platform.runLater(() -> playersGP.setReady(msg.from, true));
-                case CHANGED_NAME -> Platform.runLater(() -> playersGP.changeName(msg.from, (String) msg.adt_data[0]));
-                case GONE_PUBLIC -> Platform.runLater(() -> setRoomPrivacy(true));
-                case GONE_PRIVATE -> Platform.runLater(() -> setRoomPrivacy(false));
-                default -> {
+                case REQUEST_TEAM_UP: {
+                    Platform.runLater(() -> handle_team_up_request(msg.from));
+                    break;
+                }
+                case TOOK_EMPTY_PLACE: {
+                    Platform.runLater(() -> took_empty_place(msg.from, RoomPosition.values()[(int) msg.adt_data[0]]));
+                    break;
+                }
+                case TEAMED_UP: {
+                    Platform.runLater(() -> teamed_up((int) msg.adt_data[0], (int) msg.adt_data[1]));
+                    break;
+                }
+                case DENY_TEAM_UP: {
+                    Platform.runLater(() -> denied_team_up(msg.from));
+                    break;
+                }
+                case JOINED: {
+                    Platform.runLater(() -> addPlayer(false, msg.from, (String) msg.adt_data[0], RoomPosition.values()[(int) msg.adt_data[1]]));
+                    break;
+                }
+                case LEFT: {
+                    Platform.runLater(() -> removePlayer(msg.from, false));
+                    break;
+                }
+                case KICKED: {
+                    Platform.runLater(() -> removePlayer(msg.from, true));
+                    break;
+                }
+                case NOT_READY: {
+                    Platform.runLater(() -> playersGP.setReady(msg.from, false));
+                    break;
+                }
+                case READY: {
+                    Platform.runLater(() -> playersGP.setReady(msg.from, true));
+                    break;
+                }
+                case CHANGED_NAME: {
+                    Platform.runLater(() -> playersGP.changeName(msg.from, (String) msg.adt_data[0]));
+                    break;
+                }
+                case GONE_PUBLIC: {
+                    Platform.runLater(() -> setRoomPrivacy(true));
+                    break;
+                }
+                case GONE_PRIVATE: {
+                    Platform.runLater(() -> setRoomPrivacy(false));
+                    break;
+                }
+                default: {
                 }
             }
         }
@@ -726,10 +777,22 @@ public class RoomApp extends VBox {
         private void addNewPlayerToPosition(int id, String player_name, RoomPosition position, boolean isYou) {
             PlayerGUI player = null;
             switch (position) {
-                case BOTTOM -> player = bottom;
-                case LEFT -> player = left;
-                case TOP -> player = top;
-                case RIGHT -> player = right;
+                case BOTTOM: {
+                    player = bottom;
+                    break;
+                }
+                case LEFT: {
+                    player = left;
+                    break;
+                }
+                case TOP: {
+                    player = top;
+                    break;
+                }
+                case RIGHT: {
+                    player = right;
+                    break;
+                }
             }
             player.addPlayer(id, player_name, isYou);
             players.put(player.id, player);
@@ -760,10 +823,22 @@ public class RoomApp extends VBox {
         private void addExistingPlayerToPosition(RoomPosition position, int id, String player_name, boolean isReady) {
             PlayerGUI empty_position = null;
             switch (position) {
-                case BOTTOM -> empty_position = bottom;
-                case LEFT -> empty_position = left;
-                case TOP -> empty_position = top;
-                case RIGHT -> empty_position = right;
+                case BOTTOM: {
+                    empty_position = bottom;
+                    break;
+                }
+                case LEFT: {
+                    empty_position = left;
+                    break;
+                }
+                case TOP: {
+                    empty_position = top;
+                    break;
+                }
+                case RIGHT: {
+                    empty_position = right;
+                    break;
+                }
             }
             empty_position.addExistingPlayer(id, player_name, isReady);
             players.put(empty_position.id, empty_position);
@@ -771,19 +846,19 @@ public class RoomApp extends VBox {
 
         private Object[] emptyPosition(RoomPosition position) {
             switch (position) {
-                case BOTTOM -> {
+                case BOTTOM: {
                     return bottom.removePlayer();
                 }
-                case LEFT -> {
+                case LEFT: {
                     return left.removePlayer();
                 }
-                case TOP -> {
+                case TOP: {
                     return top.removePlayer();
                 }
-                case RIGHT -> {
+                case RIGHT: {
                     return right.removePlayer();
                 }
-                default -> {
+                default: {
                     return null;
                 }
             }

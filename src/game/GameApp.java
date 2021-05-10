@@ -418,7 +418,7 @@ public class GameApp extends BorderPane {
 
     private void initPlayersNames(Map<Integer, String> players_names) {
         switch (GAME_TYPE) {
-            case TwovTwo -> {
+            case TwovTwo: {
                 int game_pos = playerID;
                 yourName = players_names.get(game_pos);
                 bottomPane.setName(yourName);
@@ -434,8 +434,9 @@ public class GameApp extends BorderPane {
                 if (game_pos > 4)
                     game_pos = 1;
                 leftPane.setName(players_names.get(game_pos));
+                break;
             }
-            case OnevOne -> {
+            case OnevOne: {
                 if (playerID == 1) {
                     yourName = players_names.get(1);
                     bottomPane.setName(yourName);
@@ -446,34 +447,39 @@ public class GameApp extends BorderPane {
                     op1Name = players_names.get(1);
                 }
                 topPane.setName(op1Name);
+                break;
             }
-            case ThreePlayers -> {
+            case ThreePlayers: {
                 switch (playerID) {
-                    case 1 -> {
+                    case 1: {
                         yourName = players_names.get(1);
                         bottomPane.setName(yourName);
                         op1Name = players_names.get(2);
                         topPane.setName(op1Name);
                         op2Name = players_names.get(3);
                         leftPane.setName(op2Name);
+                        break;
                     }
-                    case 2 -> {
+                    case 2: {
                         yourName = players_names.get(2);
                         bottomPane.setName(yourName);
                         op1Name = players_names.get(3);
                         rightPane.setName(op1Name);
                         op2Name = players_names.get(1);
                         topPane.setName(op2Name);
+                        break;
                     }
-                    case 3 -> {
+                    case 3: {
                         yourName = players_names.get(3);
                         bottomPane.setName(yourName);
                         op1Name = players_names.get(1);
                         rightPane.setName(op1Name);
                         op2Name = players_names.get(2);
                         leftPane.setName(op2Name);
+                        break;
                     }
                 }
+                break;
             }
         }
     }
