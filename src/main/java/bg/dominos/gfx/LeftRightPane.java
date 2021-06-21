@@ -1,45 +1,41 @@
 package bg.dominos.gfx;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import bg.dominos.MainApp;
 import bg.dominos.game.Handler;
-import javafx.application.Platform;
-import javafx.geometry.Pos;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
+import bg.dominos.lang.Language;
 import bg.dominos.model.Domino;
 import bg.dominos.model.Player;
 import bg.dominos.model.Position;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Circle;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LeftRightPane extends VBox {
     private final Handler handler;
     private Player player;
     private final List<Piece> pieces;
-    private final Text name;
+    private final Label name;
     private final Circle turn;
     private final Paint yourTurn = Paint.valueOf("gold"), notYourTurn = Paint.valueOf("red");
     private final Position panePosition;
-    private final Text points;
+    private boolean draw_size;
 
     public LeftRightPane(Handler handler, Position panePosition) {
         pieces = new ArrayList<>();
         this.panePosition = panePosition;
         this.handler = handler;
         setAlignment(Pos.CENTER);
-        turn = new Circle(15, notYourTurn);
-        HBox hbox = new HBox();
-        hbox.setAlignment(Pos.CENTER);
-        this.name = new Text();
-        this.name.setFont(Font.font(30));
-        points = new Text();
-        points.setFont(Font.font(30));
-        hbox.getChildren().addAll(this.name, turn);
-        getChildren().addAll(points, hbox);
+        turn = new Circle();
+        turn.radiusProperty().bind(MainApp.fontProperty.divide(3));
+        turn.setFill(notYourTurn);
+        this.name = new Label();
+        getChildren().addAll(this.name, turn);
     }
 
     public boolean isEmpty() {
@@ -48,19 +44,11 @@ public class LeftRightPane extends VBox {
 
     private void LoadPieces() {
         Platform.runLater(() -> {
-            try {
-                synchronized (pieces) {
-                    for (int i = 0; i < pieces.size(); i++) {
-                        removePiece();
-                    }
-                }
-                for (Domino domino : player.getDominos()) {
-                    Piece piece = new Piece(domino, null);
-                    pieces.add(piece);
-                    getChildren().add(piece);
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            for (Domino domino : player.getDominoes()) {
+                Piece piece = new Piece(domino, null);
+                if (draw_size) piece.setDrawSize(false);
+                pieces.add(piece);
+                getChildren().add(piece);
             }
         });
     }
@@ -74,14 +62,10 @@ public class LeftRightPane extends VBox {
     }
 
     public void removePiece() {
-        try {
-            Piece removedPiece = pieces.get(0);
-            player.removeDomino(pieces.get(0).getDomino());
-            pieces.remove(0);
-            Platform.runLater(() -> getChildren().remove(removedPiece));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        Piece removedPiece = pieces.get(0);
+        player.removeDomino(pieces.get(0).getDomino());
+        pieces.remove(0);
+        Platform.runLater(() -> getChildren().remove(removedPiece));
     }
 
     public Player getPlayer() {
@@ -89,19 +73,11 @@ public class LeftRightPane extends VBox {
     }
 
     public void setPlayer(Player player) {
-        try {
-            if (player != null) {
-                this.player = player;
-                this.player.setPosition(panePosition);
-                LoadPieces();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (player != null) {
+            this.player = player;
+            this.player.setPosition(panePosition);
+            LoadPieces();
         }
-    }
-
-    public void updatePoints(String text) {
-        points.setText(text);
     }
 
     public void updateTurn() {
@@ -114,19 +90,20 @@ public class LeftRightPane extends VBox {
         });
     }
 
-    public void removePieces() {
-        try {
-            int size = pieces.size();
-            for (int i = 0; i < size; i++) {
-                removePiece();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public void clearPane() {
+        pieces.clear();
+        Platform.runLater(() -> {
+            getChildren().clear();
+            getChildren().addAll(this.name, turn);
+        });
     }
 
-    public void setName(String name) {
-        this.name.setText(name);
+    public void setDraw() {
+        draw_size = true;
+        Platform.runLater(() -> {
+            this.name.textProperty().bind(Language.DRAW_DOMINOES);
+            getChildren().remove(turn);
+        });
     }
 
     public void clear() {

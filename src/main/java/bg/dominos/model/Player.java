@@ -6,30 +6,28 @@ import java.util.List;
 public class Player {
 
     private Position position;
-    private List<Domino> dominos = new ArrayList<>();
+    private List<Domino> dominoes = new ArrayList<>();
 
     public Player(Position position) {
         this.position = position;
     }
 
     public void drawDomino(Domino domino) {
-        dominos.add(domino);
+        dominoes.add(domino);
     }
 
     public void removeDomino(Domino domino) {
-        dominos.remove(domino);
+        dominoes.remove(domino);
     }
 
-    // GETTER SETTERS
-
-    public List<Domino> getDominos() {
-        return dominos;
+    public List<Domino> getDominoes() {
+        return dominoes;
     }
 
     public void loadOtherPlayersDominoes() {
         for (int i = 0; i < 7; i++) {
             Domino domino = new Domino(-1, -1, position);
-            dominos.add(domino);
+            dominoes.add(domino);
         }
     }
 
@@ -37,14 +35,14 @@ public class Player {
         return position;
     }
 
-    public boolean canPlay(int leftValue, int rightValue) {
-        for (Domino domino : dominos) {
-            if (domino.getLeftValue() == leftValue || domino.getRightValue() == leftValue
-                    || domino.getLeftValue() == rightValue || domino.getRightValue() == rightValue) {
-                return true;
+    public boolean no_playable_domino(int[] board_extermity) {
+        for (Domino domino : dominoes) {
+            if (domino.getLeftValue() == board_extermity[0] || domino.getRightValue() == board_extermity[0]
+                    || domino.getLeftValue() == board_extermity[1] || domino.getRightValue() == board_extermity[1]) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     public void setPosition(Position position) {
@@ -52,19 +50,12 @@ public class Player {
     }
 
     public void initDrawPlayer(GameType gameType) {
-        if (gameType != GameType.TwovTwo) {
-            if (gameType == GameType.ThreePlayers) {
-                loadOtherPlayersDominoes();
-            } else {
-                for (int i = 0; i < 14; i++) {
-                    Domino domino = new Domino(-1, -1, position);
-                    dominos.add(domino);
-                }
-            }
-        }
+        if (gameType == GameType.TwovTwo) return;
+        loadOtherPlayersDominoes();
+        if (gameType == GameType.OnevOne) loadOtherPlayersDominoes();
     }
 
     public void setDominoes(List<Domino> playerDominoes) {
-        this.dominos = playerDominoes;
+        this.dominoes = playerDominoes;
     }
 }

@@ -1,44 +1,41 @@
 package bg.dominos.gfx;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import bg.dominos.MainApp;
 import bg.dominos.game.Handler;
-import javafx.application.Platform;
-import javafx.geometry.Pos;
-import javafx.scene.layout.HBox;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
+import bg.dominos.lang.Language;
 import bg.dominos.model.Domino;
 import bg.dominos.model.Player;
 import bg.dominos.model.Position;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Circle;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TopBottomPane extends HBox {
     private final Handler handler;
     private Player player;
     private final List<Piece> pieces;
-    private final Text name;
+    private final Label name;
     private final Circle turn;
     private final Paint yourTurn = Paint.valueOf("gold"), notYourTurn = Paint.valueOf("red");
     private final Position panePosition;
-    private final Text points;
+    private boolean draw_size;
 
     public TopBottomPane(Handler handler, Position panePosition) {
         pieces = new ArrayList<>();
         this.panePosition = panePosition;
         this.handler = handler;
         setAlignment(Pos.CENTER);
-        turn = new Circle(15, notYourTurn);
-        HBox hbox = new HBox();
-        hbox.setAlignment(Pos.CENTER);
-        this.name = new Text();
-        this.name.setFont(Font.font(30));
-        points = new Text();
-        points.setFont(Font.font(30));
-        hbox.getChildren().addAll(this.name, turn);
-        getChildren().addAll(points, hbox);
+        turn = new Circle();
+        turn.radiusProperty().bind(MainApp.fontProperty.divide(3));
+        turn.setFill(notYourTurn);
+        this.name = new Label();
+        getChildren().addAll(this.name, turn);
     }
 
     public boolean isEmpty() {
@@ -47,19 +44,11 @@ public class TopBottomPane extends HBox {
 
     private void LoadPieces() {
         Platform.runLater(() -> {
-            try {
-                synchronized (pieces) {
-                    for (int i = 0; i < pieces.size(); i++) {
-                        removePiece();
-                    }
-                }
-                for (Domino domino : player.getDominos()) {
-                    Piece piece = new Piece(domino, handler);
-                    pieces.add(piece);
-                    getChildren().add(piece);
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            for (Domino domino : player.getDominoes()) {
+                Piece piece = new Piece(domino, handler);
+                if (draw_size) piece.setDrawSize(true);
+                pieces.add(piece);
+                getChildren().add(piece);
             }
         });
     }
@@ -69,19 +58,11 @@ public class TopBottomPane extends HBox {
     }
 
     public void setPlayer(Player player) {
-        try {
-            if (player != null) {
-                this.player = player;
-                this.player.setPosition(panePosition);
-                LoadPieces();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (player != null) {
+            this.player = player;
+            this.player.setPosition(panePosition);
+            LoadPieces();
         }
-    }
-
-    public void updatePoints(String text) {
-        points.setText(text);
     }
 
     public void updateTurn() {
@@ -103,48 +84,38 @@ public class TopBottomPane extends HBox {
     }
 
     public void addPiece(Piece piece) {
-        try {
-            player.drawDomino(piece.getDomino());
-            pieces.add(piece);
-            Platform.runLater(() -> getChildren().add(piece));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        player.drawDomino(piece.getDomino());
+        pieces.add(piece);
+        Platform.runLater(() -> getChildren().add(piece));
     }
 
     public void removePiece() {
-        try {
-            Piece removedPiece = pieces.get(0);
-            player.removeDomino(pieces.get(0).getDomino());
-            pieces.remove(0);
-            Platform.runLater(() -> getChildren().remove(removedPiece));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        Piece removedPiece = pieces.get(0);
+        player.removeDomino(pieces.get(0).getDomino());
+        pieces.remove(0);
+        Platform.runLater(() -> getChildren().remove(removedPiece));
     }
 
     public void removePiece(Piece piece) {
-        try {
-            pieces.remove(piece);
-            player.removeDomino(piece.getDomino());
-            Platform.runLater(() -> getChildren().remove(piece));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        pieces.remove(piece);
+        player.removeDomino(piece.getDomino());
+        Platform.runLater(() -> getChildren().remove(piece));
     }
 
-    public void removePieces() {
-        try {
-            int size = pieces.size();
-            for (int i = 0; i < size; i++) {
-                removePiece();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public void clearPane() {
+        pieces.clear();
+        Platform.runLater(() -> {
+            getChildren().clear();
+            getChildren().addAll(this.name, turn);
+        });
     }
 
-    public void setName(String name) {
-        this.name.setText(name);
+    public void setDraw() {
+        draw_size = true;
+        Platform.runLater(() -> {
+            this.name.textProperty().bind(Language.DRAW_DOMINOES);
+            getChildren().remove(turn);
+        });
     }
+
 }

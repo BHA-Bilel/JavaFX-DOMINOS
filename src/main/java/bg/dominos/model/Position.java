@@ -3,8 +3,10 @@ package bg.dominos.model;
 public enum Position {
     TOP, BOTTOM, RIGHT, LEFT, CENTER;
 
+    /**
+     * get your position based on your playerID (not translated to bottom)
+     */
     public static Position getPositionByPlayerID(GameType type, int playerID) {
-        // get your position based on your playerID (not translated to bottom)
         Position your_position = null;
         switch (type) {
             case TwovTwo: {
@@ -79,85 +81,60 @@ public enum Position {
         switch (gameType) {
             case TwovTwo: {
                 switch (this) {
-                    case BOTTOM: {
+                    case BOTTOM:
                         return RIGHT;
-                    }
-                    case RIGHT: {
+                    case RIGHT:
                         return TOP;
-                    }
-                    case TOP: {
+                    case TOP:
                         return LEFT;
-                    }
-                    case LEFT: {
+                    case LEFT:
                         return BOTTOM;
-                    }
-                    default: {
-                        return null;
-                    }
                 }
+                break;
             }
             case OnevOne: {
                 switch (this) {
-                    case TOP: {
+                    case TOP:
                         return BOTTOM;
-                    }
-                    case BOTTOM: {
+                    case BOTTOM:
                         return TOP;
-                    }
-                    default: {
-                        return null;
-                    }
                 }
+                break;
             }
             case ThreePlayers: {
                 switch (yourPosition) {
                     case BOTTOM: {
                         switch (this) {
-                            case TOP: {
+                            case TOP:
                                 return LEFT;
-                            }
-                            case LEFT: {
+                            case LEFT:
                                 return BOTTOM;
-                            }
-                            case BOTTOM: {
+                            case BOTTOM:
                                 return TOP;
-                            }
-                            default: {
-                                return null;
-                            }
                         }
+                        break;
                     }
                     case LEFT: {
                         switch (this) {
-                            case RIGHT: {
+                            case RIGHT:
                                 return LEFT;
-                            }
-                            case LEFT: {
+                            case LEFT:
                                 return BOTTOM;
-                            }
-                            case BOTTOM: {
+                            case BOTTOM:
                                 return RIGHT;
-                            }
-                            default: {
-                                return null;
-                            }
                         }
+                        break;
                     }
                     case TOP: {
                         switch (this) {
-                            case TOP: {
+                            case TOP:
                                 return BOTTOM;
-                            }
-                            case BOTTOM: {
+                            case BOTTOM:
                                 return RIGHT;
-                            }
-                            case RIGHT: {
+                            case RIGHT:
                                 return TOP;
-                            }
-                            default: {
-                                return null;
-                            }
                         }
+                        break;
                     }
                 }
             }
@@ -165,8 +142,10 @@ public enum Position {
         return null;
     }
 
+    /**
+     * relevant to player position (translated position)
+     */
     public static Position getCurrentPositionByPlayerID(GameType type, Position yourPosition, int position) {
-        // relevant to player position (translated position)
         switch (yourPosition) {
             case BOTTOM: {
                 switch (position) {
@@ -183,8 +162,7 @@ public enum Position {
                     case 3: {
                         if (type == GameType.TwovTwo) {
                             return TOP;
-                        } else // actually a three players match because one v one match have only 2 players
-                        {
+                        } else { // actually a three players match because one v one match have only 2 players
                             return LEFT;
                         }
                     }
@@ -195,7 +173,7 @@ public enum Position {
                     }
                 }
             }
-            case RIGHT: { // occurs only in twovtwo matches
+            case RIGHT: { // occurs only in two v two matches
                 switch (position) {
                     case 1: {
                         return LEFT;

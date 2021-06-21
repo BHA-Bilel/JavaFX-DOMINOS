@@ -4,134 +4,154 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import bg.dominos.game.GameApp;
 import bg.dominos.game.Handler;
 import bg.dominos.model.Domino;
 import bg.dominos.model.Position;
 import javafx.application.Platform;
+import javafx.geometry.HPos;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
 
 public class Board extends GridPane {
 
     private final Handler handler;
     private Piece leftPiece, rightPiece;
-    private final List<Piece> pieces = new ArrayList<>();
-    private final Point2D nextLeft = new Point2D.Double(), nextRight = new Point2D.Double();
+    private final List<Piece> pieces;
+    private final Point2D nextLeft, nextRight;
 
     public Board(Handler handler) {
         this.handler = handler;
         setAlignment(Pos.CENTER);
+        pieces = new ArrayList<>();
+        nextLeft = new Point2D.Double();
+        nextRight = new Point2D.Double();
         nextRight.setLocation(8, 3);
         nextLeft.setLocation(nextRight);
         setOnMouseClicked(e -> {
-            if (handler.getGame().isYourTurn() && isEmpty() && handler.getGame().getSelectedPiece() != null) {
-                play(handler.getGame().getSelectedPiece(), true);
+            GameApp game = handler.getGame();
+            Piece selected = game.getSelectedPiece();
+            if (game.isYourTurn() && isEmpty() && selected != null) {
+                game.iplayed(true); // first played domino
             }
         });
+    }
+
+    public void reset_board() {
+        Platform.runLater(() -> getChildren().clear());
+        pieces.clear();
+        leftPiece = null;
+        rightPiece = null;
+        nextRight.setLocation(8, 3);
+        nextLeft.setLocation(nextRight);
     }
 
     public boolean isEmpty() {
         return rightPiece == null && leftPiece == null;
     }
 
-    private Piece setupPiece(Piece piece, boolean right, int column, int row) {
+    private void setupPiece(Piece piece, boolean right, int column, int row) {
         piece.setRow(row);
         piece.setColumn(column);
         piece.getDomino().setPosition(Position.CENTER);
-        piece = setupLogic(piece, right);
-        if (canIsetItVertical(piece, row, column))
-            piece.setVertical(false);
-        else
-            piece.setHorizontal(row == 0 || row == 6);
-        piece = setupGraphic(piece, row);
+        boolean flip = setupLogic(piece, right);
+        setupDominoInGUI(piece, row, column, flip);
+        piece.set_center();
+        setupGraphic(piece, row);
         setConstraints(piece, column, row);
-        return piece;
     }
 
-    private Piece setupLogic(Piece piece, boolean right) {
+    private boolean setupLogic(Piece piece, boolean right) {
         if (!isEmpty()) {
             if (right) {
                 if (rightPiece.getDomino().getRightValue() != piece.getDomino().getLeftValue()) {
                     piece.getDomino().Switch();
+                    return true;
                 }
             } else {
                 if (leftPiece.getDomino().getLeftValue() != piece.getDomino().getRightValue()) {
                     piece.getDomino().Switch();
+                    return true;
                 }
             }
         }
-        return piece;
+        return false;
     }
 
-    private Piece setupGraphic(Piece piece, int row) {
+    private void setupGraphic(Piece piece, int row) {
         if (row == 0) {
-            piece.setTranslateY(50);
+            GridPane.setValignment(piece, VPos.BOTTOM);
         } else if (row == 6) {
-            piece.setTranslateY(-50);
+            GridPane.setValignment(piece, VPos.TOP);
         } else if (row != 3) {
             if (row < 3) {
-                piece.setTranslateX(-25);
-                piece.setTranslateY(25);
+                GridPane.setValignment(piece, VPos.BOTTOM);
+                GridPane.setHalignment(piece, HPos.LEFT);
             } else {
-                piece.setTranslateX(25);
-                piece.setTranslateY(-25);
+                GridPane.setValignment(piece, VPos.TOP);
+                GridPane.setHalignment(piece, HPos.RIGHT);
             }
         }
-        return piece;
     }
 
-    private boolean canIsetItVertical(Piece piece, int row, int column) {
-        boolean otherConditions;
+    private void setupDominoInGUI(Piece piece, int row, int column, boolean flip) {
+        boolean in_corner, in_middle_row = row == 3;
+        if (isEmpty()) {
+            if (piece.getDomino().isDouble()) piece.setVertical(flip);
+            else piece.setHorizontal(in_middle_row);
+            return;
+        }
         Piece otherPiece;
-        if (row == 3) {
-            otherConditions = column != 0 && column != 16;
+        if (in_middle_row) {
+            in_corner = column == 0 || column == 16;
             if (column > 9) { // ONLY CHECK TOP
                 otherPiece = getPiece(0, column);
             } else { // ONLY CHECK BOTTOM
                 otherPiece = getPiece(6, column);
             }
-        } else {
-            if (row == 0) {// CHECK CENTER
-                otherConditions = column != 0;
+        } else { // CHECK CENTER
+            if (row == 0) {
+                in_corner = column == 0;
                 otherPiece = getPiece(3, column);
-
-            } else if (row == 6) { // ROW = 6
-                // CHECK CENTER
-                otherConditions = column != 16;
+            } else if (row == 6) {
+                in_corner = column == 16;
                 otherPiece = getPiece(3, column);
-            } else {
-                return true;
+            } else { // row in {1,2,4,5}
+                piece.setVertical(flip);
+                return;
             }
         }
+        if (in_corner) {
+            piece.setHorizontal(in_middle_row);
+            return;
+        }
         if (otherPiece == null) {
-            if (isEmpty())
-                return piece.getDomino().isDouble();
-            else
-                return piece.getDomino().isDouble() && otherConditions;
+            if (piece.getDomino().isDouble()) {
+                piece.setVertical(flip);
+            } else {
+                piece.setHorizontal(in_middle_row);
+            }
         } else {
             if (piece.getDomino().isDouble()) {
-                return otherPiece.getDomino().isDouble();
+                if (otherPiece.getDomino().isDouble()) piece.setVertical(flip);
+                else piece.setHorizontal(true); // doesn't matter because it has the same l/r values
             } else {
                 if (otherPiece.getDomino().isDouble()) {
-                    otherPiece.setHorizontal();
+                    otherPiece.setHorizontal(true); // doesn't matter because it has the same l/r values
                 }
-                return false;
+                piece.setHorizontal(in_middle_row);
             }
         }
     }
 
     public void play(Piece piece, boolean right) {
-        if (handler.getGame().getCurrentPosition() == Position.BOTTOM) {
-            handler.getGame().getPlay().play(piece.getDomino().getLeftValue(), piece.getDomino().getRightValue(),
-                    right);
-        }
         handler.getGame().removePiece();
         if (!isEmpty()) {
             if (right) {
                 rightPiece.getDomino().setRight(piece.getDomino());
                 piece.getDomino().setLeft(rightPiece.getDomino());
-                piece = setupPiece(piece, true, (int) nextRight.getX(), (int) nextRight.getY());
+                setupPiece(piece, true, (int) nextRight.getX(), (int) nextRight.getY());
                 rightPiece = piece;
                 int nextColumn = (int) nextRight.getX();
                 int nextRow = (int) nextRight.getY();
@@ -150,7 +170,7 @@ public class Board extends GridPane {
             } else {
                 leftPiece.getDomino().setLeft(piece.getDomino());
                 piece.getDomino().setRight(leftPiece.getDomino());
-                piece = setupPiece(piece, false, (int) nextLeft.getX(), (int) nextLeft.getY());
+                setupPiece(piece, false, (int) nextLeft.getX(), (int) nextLeft.getY());
                 leftPiece = piece;
                 int nextColumn = (int) nextLeft.getX();
                 int nextRow = (int) nextLeft.getY();
@@ -168,20 +188,14 @@ public class Board extends GridPane {
                 nextLeft.setLocation(nextColumn, nextRow);
             }
         } else {
-            piece = setupPiece(piece, right, (int) nextRight.getX(), (int) nextRight.getY());
+            setupPiece(piece, right, (int) nextRight.getX(), (int) nextRight.getY());
             leftPiece = piece;
             rightPiece = piece;
             nextRight.setLocation(nextRight.getX() + 1, nextRight.getY());
             nextLeft.setLocation(nextLeft.getX() - 1, nextLeft.getY());
         }
-        piece.setBorderFill(Color.GOLD);
         pieces.add(piece);
-        final Piece insert = piece;
-        Platform.runLater(() -> getChildren().add(insert));
-
-        if (!handler.getGame().checkState()) {
-            handler.getGame().switchTurn();
-        }
+        Platform.runLater(() -> getChildren().add(piece));
     }
 
     /**
@@ -217,6 +231,10 @@ public class Board extends GridPane {
             }
         }
         return left && right;
+    }
+
+    public int[] get_extermity() {
+        return new int[]{leftPiece.getDomino().getLeftValue(), rightPiece.getDomino().getRightValue()};
     }
 
     public Piece getMostLeftPiece() {

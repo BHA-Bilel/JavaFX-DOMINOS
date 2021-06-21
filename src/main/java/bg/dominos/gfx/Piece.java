@@ -1,64 +1,66 @@
 package bg.dominos.gfx;
 
 
+import bg.dominos.MainApp;
+import bg.dominos.game.GameApp;
 import bg.dominos.game.Handler;
-import javafx.application.Platform;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import bg.dominos.model.Domino;
 import bg.dominos.model.Position;
+import javafx.application.Platform;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
-public class Piece extends StackPane {
+public class Piece extends ImageView {
     private int row, column;
     private final Domino domino;
-    private Rectangle border;
-    private ImageView dominoPiece;
-    private Color color = Color.GRAY;
+    private boolean center = false;
 
     public Piece(Domino domino, Handler handler) {
         this.domino = domino;
-        dominoPiece = Assets.getDomino(domino);
-        Platform.runLater(() -> getChildren().add(dominoPiece));
-        if (domino.getPosition() == Position.BOTTOM) {
-            border = new Rectangle(dominoPiece.getFitWidth(), dominoPiece.getFitHeight());
-            border.setOpacity(0.5);
-            border.setFill(Color.TRANSPARENT);
-            Platform.runLater(() -> getChildren().add(border));
-        }
+        boolean vertical = domino.getPosition() == Position.TOP || domino.getPosition() == Position.BOTTOM
+                || (domino.getPosition() == Position.CENTER && domino.isDouble());
+        Image image = Assets.getDomino(domino.getLeftValue(), domino.getRightValue(), vertical);
+        setImage(image);
+        if (domino.getLeftValue() < domino.getRightValue()) setRotate(180);
+        setPreserveRatio(true);
+        if (vertical) fitHeightProperty().bind(MainApp.dominoesProperty);
+        else fitWidthProperty().bind(MainApp.dominoesProperty);
+
         if (domino.getPosition() == Position.BOTTOM || domino.getPosition() == Position.CENTER) {
             setOnMouseClicked(e -> {
-                if (handler.getGame().getCurrentPosition() == Position.BOTTOM) {
-                    if (domino.getPosition() == Position.BOTTOM) {
-                        if (handler.getGame().getSelectedPiece() == null) {
-                            handler.getGame().setSelectedPiece(this);
-                            setHighlighted(true);
-                            handler.getGame().highlightPossibleMoves(true);
+                GameApp game = handler.getGame();
+                if (game.getCurrentPosition() != Position.BOTTOM) return;
+                if (domino.getPosition() == Position.BOTTOM) {
+                    if (game.getSelectedPiece() == null) {
+                        game.setSelectedPiece(this);
+                        setHighlighted(true);
+                        game.highlightPossibleMoves(true);
+                    } else {
+                        if (game.getSelectedPiece() == this) {
+                            game.highlightPossibleMoves(false);
+                            setHighlighted(false);
+                            game.setSelectedPiece(null);
                         } else {
-                            if (handler.getGame().getSelectedPiece() == this) {
-                                handler.getGame().highlightPossibleMoves(false);
-                                setHighlighted(false);
-                                handler.getGame().setSelectedPiece(null);
-                            } else {
-                                if (handler.getGame().getSelectedPiece() != null) {
-                                    handler.getGame().getSelectedPiece().setHighlighted(false);
-                                    handler.getGame().highlightPossibleMoves(false);
-                                    handler.getGame().setSelectedPiece(null);
-                                }
-                                handler.getGame().setSelectedPiece(this);
-                                setHighlighted(true);
-                                handler.getGame().highlightPossibleMoves(true);
+                            if (game.getSelectedPiece() != null) {
+                                game.getSelectedPiece().setHighlighted(false);
+                                game.highlightPossibleMoves(false);
+                                game.setSelectedPiece(null);
                             }
+                            game.setSelectedPiece(this);
+                            setHighlighted(true);
+                            game.highlightPossibleMoves(true);
                         }
-                    } else if (domino.getPosition() == Position.CENTER) {
-                        if (handler.getGame().getPossibleMoves().contains(this)) {
-                            handler.getGame().getBoard().play(handler.getGame().getSelectedPiece(), this == handler.getGame().getBoard().getMostRightPiece()
-                                    && handler.getGame().isLegalRight());
-                        }
+                    }
+                } else if (domino.getPosition() == Position.CENTER) {
+                    if (game.getPossibleMoves().contains(this)) {
+                        game.iplayed(this == game.getBoard().getMostRightPiece() && game.isLegalRight());
                     }
                 }
             });
+        } else {
+            if (domino.getPosition() == Position.TOP) fitWidthProperty().bind(MainApp.otherDominoesProperty);
+            else fitHeightProperty().bind(MainApp.otherDominoesProperty);
         }
     }
 
@@ -90,8 +92,8 @@ public class Piece extends StackPane {
         this.column = column;
     }
 
-    public void setBorderFill(Color color) {
-        this.color = color;
+    public void set_center() {
+        center = true;
     }
 
     public Domino getDomino() {
@@ -100,52 +102,43 @@ public class Piece extends StackPane {
 
     public void setHighlighted(boolean highlighted) {
         if (highlighted) {
-            border.setFill(color);
+            ColorAdjust colorAdjust = new ColorAdjust();
+            if (center) {
+                colorAdjust.setHue(0.2810457547505696);
+                colorAdjust.setSaturation(1.0);
+            } else colorAdjust.setBrightness(-0.17254900932312012);
+            setEffect(colorAdjust);
         } else {
-            border.setFill(Color.TRANSPARENT);
+            setEffect(null);
         }
     }
 
-    public void setVertical(boolean right) {
-        setRotate(180);
-        border = new Rectangle();
-        border.setOpacity(0.5);
-        border.setFill(Color.TRANSPARENT);
-        border.setWidth(50);
-        border.setHeight(100);
+    public void setVertical(boolean flip) {
         Platform.runLater(() -> {
-            getChildren().remove(dominoPiece);
-            dominoPiece = Assets.getVertical(domino.getLeftValue(), domino.getRightValue(), right);
-            getChildren().add(dominoPiece);
-            getChildren().add(border);
+            setRotate(0);
+            Image image = Assets.getVertical(domino.getLeftValue(), domino.getRightValue());
+            setImage(image);
+            if (flip) setRotate(180);
+            fitHeightProperty().bind(MainApp.dominoesProperty);
+            fitWidthProperty().unbind();
         });
     }
 
-    public void setHorizontal(boolean right) {
-        border = new Rectangle();
-        border.setOpacity(0.5);
-        border.setFill(Color.TRANSPARENT);
-        border.setWidth(100);
-        border.setHeight(50);
+    public void setHorizontal(boolean in_middle_row) {
         Platform.runLater(() -> {
-            getChildren().remove(dominoPiece);
-            dominoPiece = Assets.getHorizontal(domino.getLeftValue(), domino.getRightValue(), right);
-            getChildren().add(dominoPiece);
-            getChildren().add(border);
+            setRotate(0);
+            Image image = Assets.getHorizontal(domino.getLeftValue(), domino.getRightValue());
+            setImage(image);
+            if (in_middle_row && domino.getLeftValue() < domino.getRightValue()
+                    || !in_middle_row && domino.getLeftValue() > domino.getRightValue())
+                setRotate(180);
+            fitWidthProperty().bind(MainApp.dominoesProperty);
+            fitHeightProperty().unbind();
         });
     }
 
-    public void setHorizontal() {
-        border = new Rectangle();
-        border.setOpacity(0.5);
-        border.setFill(Color.TRANSPARENT);
-        border.setWidth(100);
-        border.setHeight(50);
-        Platform.runLater(() -> {
-            getChildren().remove(dominoPiece);
-            dominoPiece = Assets.getHorizontal(domino.getLeftValue(), domino.getRightValue());
-            getChildren().add(dominoPiece);
-            getChildren().add(border);
-        });
+    public void setDrawSize(boolean vertical_pos) {
+        if (vertical_pos) fitWidthProperty().bind(MainApp.drawDominoesProperty);
+        else fitHeightProperty().bind(MainApp.drawDominoesProperty);
     }
 }
